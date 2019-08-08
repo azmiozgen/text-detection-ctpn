@@ -7,20 +7,18 @@ import numpy as np
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-i", "--image", type=str, required=True, help="Input image file")
-    parser.add_argument("-o", "--output", type=str, required=True, help="Output coordinates file")
-    parser.add_argument("-c", "--coord_file", type=str, required=True, help="Tile coordinates file")
     parser.add_argument("-d", "--directory", type=str, required=True, help="Tile directory")
+    parser.add_argument("-o", "--output", type=str, required=True, help="Output coordinates file")
+    parser.add_argument("-t", "--tile_coord_file", type=str, required=True, help="Tile coordinates file")
     args = vars(parser.parse_args())
-    IMAGE_FILE = args['image']
-    OUTPUT_FILE = args['output']
-    COORD_FILE = args['coord_file']
     TILE_DIR = args['directory']
+    OUTPUT_FILE = args['output']
+    TILE_COORD_FILE = args['tile_coord_file']
 
     if os.path.isfile(OUTPUT_FILE):
         os.remove(OUTPUT_FILE)
 
-    tile_coords = np.loadtxt(COORD_FILE, delimiter=' ', dtype=str)
+    tile_coords = np.loadtxt(TILE_COORD_FILE, delimiter=' ', dtype=str)
     for tile_name, tile_coord in tile_coords:
         tile_line_coord_file = os.path.join(TILE_DIR, tile_name.replace('.png', '.txt'))
 
@@ -48,3 +46,7 @@ if __name__ == "__main__":
         with open(OUTPUT_FILE, 'a') as f:
             for tile_line_coord in tile_line_coords:
                 f.write(','.join(list(map(str, tile_line_coord[:8]))) + '\n')
+
+    print("Fixed coordinates were written to {}".format(OUTPUT_FILE))
+
+

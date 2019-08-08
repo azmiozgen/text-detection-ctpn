@@ -39,14 +39,12 @@ if __name__ == "__main__":
     parser.add_argument("-i", "--image", type=str, required=True, help="Input image file")
     parser.add_argument("-o", "--output", type=str, required=True, help="Output coordinates file")
     parser.add_argument("-t", "--tile_ratio", type=float, required=False, default=0.3, help="Tile ratio")
+    parser.add_argument("-w", "--write_tiles", action='store_true', required=False, default=False, help="Write tiles")
     args = vars(parser.parse_args())
     IMAGE_FILE = args['image']
     OUTPUT_FILE = args['output']
     TILE_RATIO = args['tile_ratio']
-
-    # if os.path.isfile(OUTPUT_FILE):
-        # print("{} exists.".format(OUTPUT_FILE))
-        # exit()
+    WRITE_TILES = args['write_tiles']
 
     ## Read image and tile
     img = cv2.imread(IMAGE_FILE)
@@ -68,6 +66,8 @@ if __name__ == "__main__":
             f.write(' ')
             f.write(str(coord).strip('[').strip(']').replace(' ', ''))
             f.write('\n')
-            cv2.imwrite(os.path.join(tile_dir, crop_name), crop)
+            if WRITE_TILES:
+                cv2.imwrite(os.path.join(tile_dir, crop_name), crop)
             crop_idx += 1
-    print("Crops were written to {}".format(tile_dir))
+    if WRITE_TILES:
+        print("Crops were written to {}".format(tile_dir))

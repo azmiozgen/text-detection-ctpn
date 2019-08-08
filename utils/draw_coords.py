@@ -5,6 +5,30 @@ import os
 import numpy as np
 import cv2
 
+def draw_coords(img, coords):
+    for coord in coords:
+        n = len(coord)
+        if n < 4:
+            print("{} has wrong coordinates. Passing".format(COORD_FILE))
+            continue
+        if n % 2 == 1:
+            coord = coord[:n - 1]
+        try:
+            coord = coord.astype(int)
+        except (ValueError, AttributeError):
+            print("{} has wrong coordinates. Passing".format(COORD_FILE))
+            continue
+
+        random_color = (np.random.randint(256), np.random.randint(256), np.random.randint(256))
+        if len(coord) == 4:
+            cv2.rectangle(img, tuple(coord[:2]), tuple(coord[2:]), color=random_color, thickness=THICKNESS)
+        elif len(coord) > 4:
+            cv2.polylines(img, [coord.reshape((-1, 1, 2))], True, 
+                        color=random_color, thickness=THICKNESS,
+                        lineType=cv2.LINE_AA)
+
+    return img
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
@@ -33,26 +57,7 @@ if __name__ == "__main__":
         print("Coords are empty. Delimiter should be comma(,)")
         exit()
 
-    for coord in coords:
-        n = len(coord)
-        if n < 4:
-            print("{} has wrong coordinates. Passing".format(COORD_FILE))
-            continue
-        if n % 2 == 1:
-            coord = coord[:n - 1]
-        try:
-            coord = coord.astype(int)
-        except (ValueError, AttributeError):
-            print("{} has wrong coordinates. Passing".format(COORD_FILE))
-            continue
-
-        random_color = (np.random.randint(256), np.random.randint(256), np.random.randint(256))
-        if len(coord) == 4:
-            cv2.rectangle(img, tuple(coord[:2]), tuple(coord[2:]), color=random_color, thickness=THICKNESS)
-        elif len(coord) > 4:
-            cv2.polylines(img, [coord.reshape((-1, 1, 2))], True, 
-                          color=random_color, thickness=THICKNESS,
-                          lineType=cv2.LINE_AA)
+    img = draw_coords(img, coords)
 
     if os.path.isfile(OUTPUT_FILE):
         os.remove(OUTPUT_FILE)

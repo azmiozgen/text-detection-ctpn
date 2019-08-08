@@ -72,11 +72,11 @@ def merge_all(bboxes, containment_epsilon=1e-2, same_line_epsilon=2e-1):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--coord_file", type=str, required=True, help="Line coordinates file")
     parser.add_argument("-o", "--output", type=str, required=True, help="Output coordinates file")
+    parser.add_argument("-c", "--coord_file", type=str, required=True, help="Line coordinates file")
     args = vars(parser.parse_args())
-    OUTPUT_FILE = args['output']
     COORD_FILE = args['coord_file']
+    OUTPUT_FILE = args['output']
 
     if os.path.isfile(OUTPUT_FILE):
         os.remove(OUTPUT_FILE)
@@ -91,3 +91,4 @@ if __name__ == "__main__":
 
     ## Write merged bboxes
     np.savetxt(OUTPUT_FILE, merged_bboxes, delimiter=',', fmt='%d')
+    print("Final coordinates were written to {}".format(OUTPUT_FILE))

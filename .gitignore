@@ -1,5 +1,7 @@
 data/dataset/
+
 __pycache__/
+
 cache/
 pretrain/
 VOCdevkit2007/
@@ -8,9 +10,14 @@ logs_*/
 output/
 build/
 dist/
+
 checkpoints/
 checkpoints_*/
+
 .idea/
+
+.vscode/
+
 *.py[cod]
 *.c[cod]
 *.so

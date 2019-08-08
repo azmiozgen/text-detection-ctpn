@@ -52,9 +52,7 @@ def resize_image(img):
 
 
 def main(argv=None):
-    if os.path.exists(FLAGS.output_path):
-        shutil.rmtree(FLAGS.output_path)
-    os.makedirs(FLAGS.output_path)
+    os.makedirs(FLAGS.output_path, exist_ok=True)
     os.environ['CUDA_VISIBLE_DEVICES'] = FLAGS.gpu
 
     with tf.get_default_graph().as_default():
@@ -96,7 +94,7 @@ def main(argv=None):
                 scores = textsegs[:, 0]
                 textsegs = textsegs[:, 1:5]
 
-                textdetector = TextDetector(DETECT_MODE='H')
+                textdetector = TextDetector(DETECT_MODE='O')
                 boxes = textdetector.detect(textsegs, scores[:, np.newaxis], img.shape[:2])
                 boxes = np.array(boxes, dtype=np.int)
 
@@ -108,6 +106,11 @@ def main(argv=None):
                                   thickness=2)
                 img = cv2.resize(img, None, None, fx=1.0 / rh, fy=1.0 / rw, interpolation=cv2.INTER_LINEAR)
                 cv2.imwrite(os.path.join(FLAGS.output_path, os.path.basename(im_fn)), img[:, :, ::-1])
+
+                boxes = boxes.astype(np.float)
+                boxes[:, [0, 2, 4, 6]] *= 1.0 / rw
+                boxes[:, [1, 3, 5, 7]] *= 1.0 / rh
+                boxes = boxes.astype(np.int)
 
                 with open(os.path.join(FLAGS.output_path, os.path.splitext(os.path.basename(im_fn))[0]) + ".txt",
                           "w") as f:

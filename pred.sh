@@ -9,8 +9,6 @@ then
     exit 1
 fi
 
-## Parameters
-TILE_RATIO=0.3
 
 ## Names
 IMAGE_FILENAME=`basename ${IMAGE_FILE} .png`
@@ -31,9 +29,17 @@ cp -n ${IMAGE_FILE} ${OUTPUT_DIR}/
 ## Tile image
 echo Tiling..
 sleep 0.5
+
+TILE_BASE_RATIO=0.4
+width=`identify -format "%w" ${IMAGE_FILE}`
+height=`identify -format "%h" ${IMAGE_FILE}`
+aspect_ratio=`bc -l <<< "${width}/${height}"`
+TILE_RATIO=`bc <<< "scale=2; ${TILE_BASE_RATIO}*${aspect_ratio}"`
+echo Tile ratio is ${TILE_RATIO}
+
 tile_coord_file=${OUTPUT_DIR}/${IMAGE_FILENAME}_tile_coordinates.txt
 tile_directory=${OUTPUT_DIR}/tiles
-if [ -d ${tile_coord_file} ]
+if [ -f ${tile_coord_file} ]
 then
     echo ${tile_coord_file} exists. PASSED.
 else
@@ -56,7 +62,7 @@ echo
 echo Fixing lines..
 sleep 0.5
 line_coord_file=${OUTPUT_DIR}/${IMAGE_FILENAME}_line_coordinates.txt
-if [ -d ${line_coord_file} ]
+if [ -f ${line_coord_file} ]
 then
     echo ${line_coord_file} exists. PASSED.
 else
@@ -73,7 +79,7 @@ echo
 echo Merging lines..
 sleep 0.5
 output_coord_file=${OUTPUT_DIR}/${IMAGE_FILENAME}_coordinates.txt
-if [ -d ${output_coord_file} ]
+if [ -f ${output_coord_file} ]
 then
     echo ${output_coord_file} exists. PASSED.
 else
@@ -83,6 +89,15 @@ else
         output_bbox_image_file=${OUTPUT_DIR}/${IMAGE_FILENAME}_bbox.png
         python ${CUR_DIR}/utils/draw_coords.py -i ${IMAGE_FILE} -o ${output_bbox_image_file} -c ${output_coord_file}
     fi
+fi
+
+## Drawing crop bboxes
+echo
+echo Drawing tile lines..
+sleep 0.5
+if ${DETAIL}
+then
+    ${CUR_DIR}/utils/draw_coords.sh ${OUTPUT_DIR}/tiles
 fi
 
 echo

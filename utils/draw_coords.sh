@@ -7,5 +7,5 @@ do
     name=`basename $f .png`
     coord_file=${OUTPUT_DIR}/${name}.txt
     output_file=${OUTPUT_DIR}/${name}_bbox.png
-    python ${CUR_DIR}/draw_coords.py -i $f -c ${coord_file} -o ${output_file}
+    python ${CUR_DIR}/draw_coords.py -i $f -o ${output_file} -c ${coord_file}
 done

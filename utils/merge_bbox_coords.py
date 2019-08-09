@@ -12,7 +12,7 @@ def convert2polygon(bbox):
     return Polygon([bbox[6:8], bbox[4:6], bbox[2:4], bbox[0:2]])
 
 def almost_contains(p1, p2, epsilon=1e-2):
-    if p1.area >= p2.area:
+    if p1.area > p2.area:
         return (p2.difference(p1).area / p1.area) < epsilon
     else:
         return False
@@ -37,7 +37,6 @@ def in_same_line(bbox1, bbox2, epsilon=2e-1):
 def merge_all(bboxes, containment_epsilon=1e-2, same_line_epsilon=2e-1):
     _merged_bboxes = []
     merge_counter = 0
-    # print("Bbox count:", len(bboxes))
     for bbox1 in bboxes:
         for bbox2 in bboxes:
 
@@ -61,8 +60,15 @@ def merge_all(bboxes, containment_epsilon=1e-2, same_line_epsilon=2e-1):
                     break
         else:
             _merged_bboxes.extend([bbox1])
-    # print(merge_counter, "merged")
     _merged_bboxes = np.unique(np.array(_merged_bboxes), axis=0)
+
+    ## Remove duplicates
+    if len(_merged_bboxes) != 0:
+        _merged_bboxes = np.unique(np.array(_merged_bboxes), axis=0)
+    else:
+        _merged_bboxes = np.array(_merged_bboxes)
+
+    ## Recursive call until no merge found
     if merge_counter > 0:
         return merge_all(_merged_bboxes, 
                          containment_epsilon=containment_epsilon, 

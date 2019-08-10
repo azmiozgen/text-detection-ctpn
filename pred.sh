@@ -9,7 +9,6 @@ then
     exit 1
 fi
 
-
 ## Names
 IMAGE_FILENAME=`basename ${IMAGE_FILE} .png`
 

@@ -95,7 +95,6 @@ def main(argv=None):
                     print("cost time: {:.2f}s".format(cost_time))
                     continue
 
-                ## TODO threshold and check if image is empty
                 _, thresh = cv2.threshold(cv2.cvtColor(im, cv2.COLOR_BGR2GRAY), 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
                 if len(np.unique(thresh)) == 1:
                     print("Image is empty. Passing")

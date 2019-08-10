@@ -43,9 +43,9 @@ def resize_image(img):
     im_size_min = np.min(img_size[0:2])
     im_size_max = np.max(img_size[0:2])
 
-    im_scale = float(600) / float(im_size_min)
-    if np.round(im_scale * im_size_max) > 1200:
-        im_scale = float(1200) / float(im_size_max)
+    im_scale = float(480) / float(im_size_min)
+    if np.round(im_scale * im_size_max) > 800:
+        im_scale = float(800) / float(im_size_max)
     new_h = int(img_size[0] * im_scale)
     new_w = int(img_size[1] * im_scale)
 
@@ -91,35 +91,46 @@ def main(argv=None):
                     im = cv2.imread(im_fn)[:, :, ::-1]
                 except:
                     print("Error reading image {}!".format(im_fn))
-                    cost_time = (time.time() - start)
-                    print("cost time: {:.2f}s".format(cost_time))
+                    print("Cost: {:.2f}s".format(time.time() - start))
                     continue
 
                 _, thresh = cv2.threshold(cv2.cvtColor(im, cv2.COLOR_BGR2GRAY), 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
                 if len(np.unique(thresh)) == 1:
                     print("Image is empty. Passing")
-                    cost_time = (time.time() - start)
-                    print("cost time: {:.2f}s".format(cost_time))
+                    print("Cost: {:.2f}s".format(time.time() - start))
                     continue
 
+                ## Image resize
+                start_resize = time.time()
                 img, (rh, rw) = resize_image(im)
                 h, w, c = img.shape
                 print("IMAGE SHAPE:", img.shape)
                 im_info = np.array([h, w, c]).reshape([1, 3])
+                print("\tCost for resize: {:.2f}s".format(time.time() - start_resize))
+
+
+                ## Forward
+                start_forward = time.time()
                 bbox_pred_val, cls_prob_val = sess.run([bbox_pred, cls_prob],
                                                        feed_dict={input_image: [img],
                                                                   input_im_info: im_info})
+                print("\tCost for forward: {:.2f}s".format(time.time() - start_forward))
 
+                ## Proposal
+                start_proposal = time.time()
                 textsegs, _ = proposal_layer(cls_prob_val, bbox_pred_val, im_info)
                 scores = textsegs[:, 0]
                 textsegs = textsegs[:, 1:5]
+                print("\tCost for proposal: {:.2f}s".format(time.time() - start_proposal))
 
+                ## Detect
+                start_detect = time.time()
                 textdetector = TextDetector(DETECT_MODE='O')
                 boxes = textdetector.detect(textsegs, scores[:, np.newaxis], img.shape[:2])
                 boxes = np.array(boxes, dtype=np.int)
+                print("\tCost for detect: {:.2f}s".format(time.time() - start_detect))
 
-                cost_time = (time.time() - start)
-                print("cost time: {:.2f}s".format(cost_time))
+                print("Cost: {:.2f}s".format(time.time() - start))
 
                 # for i, box in enumerate(boxes):
                 #     cv2.polylines(img, [box[:8].astype(np.int32).reshape((-1, 1, 2))], True, color=(0, 255, 0),

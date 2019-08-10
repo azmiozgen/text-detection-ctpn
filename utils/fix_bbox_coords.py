@@ -23,10 +23,10 @@ if __name__ == "__main__":
         tile_line_coord_file = os.path.join(TILE_DIR, tile_name.replace('.png', '.txt'))
 
         if not os.path.isfile(tile_line_coord_file):
-            print("{} not found".format(tile_line_coord_file))
+            #print("{} not found".format(tile_line_coord_file))
             continue
         if os.stat(tile_line_coord_file).st_size == 0:
-            print("{} is empty.".format(tile_line_coord_file))
+            #print("{} is empty.".format(tile_line_coord_file))
             continue
 
         ## Tile reference points

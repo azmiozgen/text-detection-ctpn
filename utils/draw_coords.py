@@ -9,14 +9,14 @@ def draw_coords(img, coords):
     for coord in coords:
         n = len(coord)
         if n < 4:
-            print("{} has wrong coordinates. Passing".format(COORD_FILE))
+            #print("{} has wrong coordinates. Passing".format(COORD_FILE))
             continue
         if n % 2 == 1:
             coord = coord[:n - 1]
         try:
             coord = coord.astype(int)
         except (ValueError, AttributeError):
-            print("{} has wrong coordinates. Passing".format(COORD_FILE))
+            #print("{} has wrong coordinates. Passing".format(COORD_FILE))
             continue
 
         random_color = (np.random.randint(256), np.random.randint(256), np.random.randint(256))
@@ -42,19 +42,19 @@ if __name__ == "__main__":
     THICKNESS = 2
 
     if not os.path.isfile(IMAGE_FILE):
-        print("{} not found.".format(IMAGE_FILE))
+        #print("{} not found.".format(IMAGE_FILE))
         exit()
     if not os.path.isfile(COORD_FILE):
-        print("{} not found.".format(COORD_FILE))
+        #print("{} not found.".format(COORD_FILE))
         exit()
     if os.stat(COORD_FILE).st_size == 0:
-        print("{} is empty.".format(COORD_FILE))
+        #print("{} is empty.".format(COORD_FILE))
         exit()
 
     img = cv2.imread(IMAGE_FILE)
     coords = np.loadtxt(COORD_FILE, delimiter=',', dtype=str)
     if len(coords) == 0:
-        print("Coords are empty. Delimiter should be comma(,)")
+        #print("Coords are empty. Delimiter should be comma(,)")
         exit()
 
     img = draw_coords(img, coords)
@@ -62,4 +62,4 @@ if __name__ == "__main__":
     if os.path.isfile(OUTPUT_FILE):
         os.remove(OUTPUT_FILE)
     cv2.imwrite(OUTPUT_FILE, img)
-    print("{} was written".format(OUTPUT_FILE))
+    #print("{} was written".format(OUTPUT_FILE))

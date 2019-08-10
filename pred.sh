@@ -54,7 +54,7 @@ fi
 echo
 echo Detecting lines..
 sleep 0.5
-python ${CUR_DIR}/main/pred.py --images_dir ${tile_directory} --output_dir ${tile_directory} --gpu 0 --checkpoint_dir ${CHECKPOINT_DIR}
+python ${CUR_DIR}/main/pred.py --images_dir ${tile_directory} --output_dir ${tile_directory} --checkpoint_dir ${CHECKPOINT_DIR} --gpu 0
 
 ## Fix (get to page-relative coordinates) lines
 echo

@@ -1,0 +1,132 @@
+import argparse
+import glob
+import os
+
+import numpy as np
+
+from shapely.geometry import Polygon
+from shapely.ops import cascaded_union
+
+
+def convert2polygon(bbox):
+    assert len(bbox) == 8, bbox
+    return Polygon([bbox[6:8], bbox[4:6], bbox[2:4], bbox[0:2]])
+
+def almost_contains(p1, p2, epsilon=1e-2):
+    if p1.area >= p2.area:
+        return (p2.difference(p1).area / p1.area) < epsilon
+    else:
+        return False
+
+def merge_polygons(p1, p2):
+    p3 = cascaded_union([p1, p2])
+    try:
+        bbox_merged = np.vstack((p3.minimum_rotated_rectangle.exterior.coords.xy)).flatten(order='F')[:-2].astype(int)
+#         bbox_merged = np.vstack((p3.exterior.coords.xy)).flatten(order='F')[:-2].astype(int)
+    except AttributeError:
+#         return [bbox1, bbox2]
+        return []
+    return [bbox_merged]
+
+def in_same_line(bbox1, bbox2, epsilon=2e-1):
+    bbox1_mean_y = np.mean(bbox1[[1, 3, 5, 7]])
+    bbox2_mean_y = np.mean(bbox2[[1, 3, 5, 7]])
+    bbox1_height = np.max(bbox1[[1, 3, 5, 7]]) - np.min(bbox1[[1, 3, 5, 7]])
+    bbox2_height = np.max(bbox2[[1, 3, 5, 7]]) - np.min(bbox2[[1, 3, 5, 7]])
+    return np.abs(bbox1_mean_y - bbox2_mean_y) / np.minimum(bbox1_height, bbox2_height) < epsilon
+
+def merge_all(bboxes, containment_epsilon=1e-2, same_line_epsilon=2e-1):
+    _merged_bboxes = []
+    merge_counter = 0
+    # print("Bbox count:", len(bboxes))
+    for bbox1 in bboxes:
+        for bbox2 in bboxes:
+
+            ## If same boxes, pass
+            if np.all(np.array(bbox1) == np.array(bbox2)):
+                continue
+
+            p1 = convert2polygon(bbox1)
+            p2 = convert2polygon(bbox2)
+
+            ## If bbox1 is almost a sub box, break
+            if almost_contains(p2, p1, epsilon=containment_epsilon):
+                break
+
+            ## If not in same line, pass
+            if in_same_line(bbox1, bbox2, epsilon=same_line_epsilon):
+                if p1.intersects(p2):
+                    merged = merge_polygons(p1, p2)
+                    _merged_bboxes.extend(merged)
+                    merge_counter += 1
+                    break
+        else:
+            _merged_bboxes.extend([bbox1])
+    # print(merge_counter, "merged")
+    _merged_bboxes = np.unique(np.array(_merged_bboxes), axis=0)
+    if merge_counter > 0:
+        return merge_all(_merged_bboxes, 
+                         containment_epsilon=containment_epsilon, 
+                         same_line_epsilon=same_line_epsilon)
+    else:
+        return bboxes
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-o", "--output", type=str, required=True, help="Output coordinates file")
+    parser.add_argument("-d", "--directory", type=str, required=True, help="Tile directory")
+    parser.add_argument("-t", "--tile_coord_file", type=str, required=True, help="Tile coordinates file")
+    parser.add_argument("-l", "--line_coord_file", type=str, required=True, help="Line coordinates file")
+    parser.add_argument("-w", "--write_tiles", action='store_true', required=False, default=False, help="Write tiles")
+    args = vars(parser.parse_args())
+    OUTPUT_FILE = args['output']
+    TILE_DIR = args['directory']
+    TILE_COORD_FILE = args['tile_coord_file']
+    LINE_COORD_FILE = args['line_coord_file']
+    WRITE_TILES = args['write_tiles']
+
+    if os.path.isfile(OUTPUT_FILE):
+        os.remove(OUTPUT_FILE)
+
+    tile_coords = np.loadtxt(TILE_COORD_FILE, delimiter=' ', dtype=str)
+    for tile_name, tile_coord in tile_coords:
+        tile_line_coord_file = os.path.join(TILE_DIR, tile_name.replace('.png', '.txt'))
+
+        ## Check tile line coordinate file integrity
+        if not os.path.isfile(tile_line_coord_file):
+            print("{} not found".format(tile_line_coord_file))
+            continue
+        if os.stat(tile_line_coord_file).st_size == 0:
+            print("{} is empty.".format(tile_line_coord_file))
+            continue
+
+        ## Tile reference points
+        tile_coord = list(map(int, tile_coord.split(',')))
+        x_ref, y_ref, _, _ = tile_coord
+
+        ## Get tile line coordinates
+        tile_line_coords = np.loadtxt(tile_line_coord_file, delimiter=',', dtype=float).reshape(-1, 9)
+        tile_line_coords[tile_line_coords <= 0] = 0
+
+        ## Update line coordinates
+        tile_line_coords[:, [0, 2, 4, 6]] += x_ref
+        tile_line_coords[:, [1, 3, 5, 7]] += y_ref
+        tile_line_coords = tile_line_coords.astype(int)
+
+        ## Write updated coordinates
+        with open(LINE_COORD_FILE, 'a') as f:
+            for tile_line_coord in tile_line_coords:
+                f.write(','.join(list(map(str, tile_line_coord[:8]))) + '\n')
+
+    ## Get line coordinates
+    bboxes = np.loadtxt(LINE_COORD_FILE, delimiter=',', dtype=int)
+
+    ## Merge bboxes
+    merged_bboxes = merge_all(bboxes, 
+                              containment_epsilon=1e-2, 
+                              same_line_epsilon=2e-1)
+
+    ## Write merged bboxes
+    np.savetxt(OUTPUT_FILE, merged_bboxes, delimiter=',', fmt='%d')
+    print("Final coordinates were written to {}".format(OUTPUT_FILE))
